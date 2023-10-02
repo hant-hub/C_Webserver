@@ -13,7 +13,7 @@ INC_DIRS := $(shell find $(SRC_DIR) -type d)
 INC_FLAGS := $(addprefix -I, $(INC_DIRS))
 
 
-CPPFLAGS := $(INC_FLAGS) -MMD -MP
+CPPFLAGS := $(INC_FLAGS) -MMD -MP -Werror
 
 
 $(BUILD_DIR)/$(EXE_NAME): $(OBJ) $(BUILD_DIR)/html

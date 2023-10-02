@@ -4,34 +4,41 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <string.h>
+#include "util/Error.h"
 #include "util/util.h"
 #include <stdlib.h>
 
 
-#define PORT 8080
+#define PORT 80
 #define NUM_CONNECTIONS 128
 #define BUF_SIZE 1024
 
-const char resp[] = "HTTP/1.0 200 OK\r\n"
-                      "Server: webserver-c\r\n"
-                      "Content-type: text/html\r\n"
-                      "\r\n"
-                      "<html>hello, world"
-                      "</html>\r\n";
         
 
 
 
 
+
+  
+   
 int main() {
 
     // Create Websocket
+
     int socketHandle = socket(AF_INET, SOCK_STREAM, 0);
     if (socketHandle == -1) {
         perror("webserver (socket)");
         return 1;
     }
     printf("Socket Successfully Created\n");
+    
+    //set for testing, forces operating system to quickly drop socket
+    int enableReuse = 1;
+    if (setsockopt(socketHandle,SOL_SOCKET,SO_REUSEADDR,&enableReuse,sizeof(int)) == -1) {
+        perror("webserver (sockopt)");
+        return 1;
+    }
+
 
     // Bind Webstocket
     struct sockaddr_in host_addr;
@@ -59,8 +66,9 @@ int main() {
     struct sockaddr_in client_addr;
     int client_addrlen = sizeof(client_addr);
 
+
     //server Loop
-    char buffer[BUF_SIZE];
+    char* buffer = calloc(BUF_SIZE, sizeof(char));
     for (;;) {
         //Accept Connection
         int newConnection = accept(socketHandle, (struct sockaddr *)&host_addr, (socklen_t *)&host_addrlen);
@@ -86,20 +94,25 @@ int main() {
         
 
         //Parse Request
-        ParseHTTP((SizedString){buffer, BUF_SIZE}, NULL);
 
-        //Write Connection
+        printf("request:\n%s\n", buffer);
+        SizedString resp;
+        int result = ParseHTTP((SizedString){buffer, BUF_SIZE}, &resp);
+        if (result == NOERROR) {	
+            //Write Connection
 
-        int writeReturn = write(newConnection, (void *)resp, strlen(resp));
-        if (writeReturn < 0) {
-            perror("webserver (write)");
-            continue;
+            int writeReturn = write(newConnection, (void *)resp.string, resp.length);
+            if (writeReturn < 0) {
+                perror("webserver (write)");
+                continue;
+            }
+
+            free(resp.string);
+
         }
-
-
-
         close(newConnection);
     }
+    free(buffer);
 
     return 0;
 }

@@ -3,26 +3,21 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-
-
-
-
-//safe Types
-typedef struct SizedString {
-    char* string;
-    size_t length;
-} SizedString;
-
-enum Error {
-    NOERROR = 0
-};
+#include "string/util_string.h"
+#include "Error.h"
 
 
 //parsing
 enum ParseResult {
-    BADREQUEST = NOERROR + 1
+    BADREQUEST = NOERROR + 1,
+    UNKNOWNREQUEST
 };
 
 enum ParseResult ParseHTTP(SizedString buffer, SizedString* out);
+
+
+
+//File Handling ----------------------------------------
+char* DumpFile(const char* filepath);
 
 #endif
